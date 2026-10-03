@@ -1,0 +1,586 @@
+{
+  "format": "dx1-diagnostics-v1",
+  "createdAt": "2026-09-27T16:35:45.164Z",
+  "device": {
+    "name": "DX1 II",
+    "vendorId": 5418,
+    "productId": 34640
+  },
+  "note": "Read requests only. No audio settings changed. Responses are not an atomic state snapshot.",
+  "reads": {
+    "firmware": {
+      "status": "received",
+      "frames": [
+        {
+          "type": 16,
+          "count": 1,
+          "index": 1,
+          "command": 4610,
+          "value": 775
+        }
+      ]
+    },
+    "capability": {
+      "status": "received",
+      "frames": [
+        {
+          "type": 16,
+          "count": 1,
+          "index": 1,
+          "command": 33031,
+          "value": 192
+        }
+      ]
+    },
+    "state": {
+      "status": "received",
+      "frames": [
+        {
+          "type": 32,
+          "count": 1,
+          "index": 1,
+          "command": 28928,
+          "value": 1
+        }
+      ]
+    },
+    "gain": {
+      "status": "received",
+      "frames": [
+        {
+          "type": 32,
+          "count": 1,
+          "index": 1,
+          "command": 29952,
+          "value": 0
+        }
+      ]
+    },
+    "peq": {
+      "status": "received",
+      "frames": [
+        {
+          "type": 16,
+          "count": 1,
+          "index": 1,
+          "command": 4612,
+          "value": 7
+        }
+      ]
+    },
+    "preset": {
+      "status": "received",
+      "frames": [
+        {
+          "type": 16,
+          "count": 1,
+          "index": 1,
+          "command": 4614,
+          "value": 1
+        }
+      ]
+    },
+    "nextOutput": {
+      "status": "received",
+      "frames": [
+        {
+          "type": 16,
+          "count": 12,
+          "index": 1,
+          "command": 33034,
+          "value": 3842
+        },
+        {
+          "type": 16,
+          "count": 12,
+          "index": 2,
+          "command": 33034,
+          "value": 130
+        },
+        {
+          "type": 16,
+          "count": 12,
+          "index": 3,
+          "command": 33034,
+          "value": 910
+        },
+        {
+          "type": 16,
+          "count": 12,
+          "index": 4,
+          "command": 33034,
+          "value": 670
+        },
+        {
+          "type": 16,
+          "count": 12,
+          "index": 5,
+          "command": 33034,
+          "value": 860
+        },
+        {
+          "type": 16,
+          "count": 12,
+          "index": 6,
+          "command": 33034,
+          "value": 990
+        },
+        {
+          "type": 16,
+          "count": 12,
+          "index": 7,
+          "command": 33034,
+          "value": 0
+        },
+        {
+          "type": 16,
+          "count": 12,
+          "index": 8,
+          "command": 33034,
+          "value": 0
+        },
+        {
+          "type": 16,
+          "count": 12,
+          "index": 9,
+          "command": 33034,
+          "value": 0
+        },
+        {
+          "type": 16,
+          "count": 12,
+          "index": 10,
+          "command": 33034,
+          "value": 0
+        },
+        {
+          "type": 16,
+          "count": 12,
+          "index": 11,
+          "command": 33034,
+          "value": 0
+        },
+        {
+          "type": 16,
+          "count": 12,
+          "index": 12,
+          "command": 33034,
+          "value": 0
+        }
+      ]
+    }
+  },
+  "records": [
+    {
+      "direction": "out",
+      "hex": "22 33 10 01 01 12 02 00 00 00 00 00 00 66 77 00",
+      "frame": {
+        "type": 16,
+        "count": 1,
+        "index": 1,
+        "command": 4610,
+        "value": 0
+      }
+    },
+    {
+      "direction": "in",
+      "hex": "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+      "frame": null
+    },
+    {
+      "direction": "in",
+      "hex": "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+      "frame": null
+    },
+    {
+      "direction": "in",
+      "hex": "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+      "frame": null
+    },
+    {
+      "direction": "in",
+      "hex": "22 33 10 01 01 12 02 00 00 03 07 bc 2d 66 77 00",
+      "frame": {
+        "type": 16,
+        "count": 1,
+        "index": 1,
+        "command": 4610,
+        "value": 775
+      }
+    },
+    {
+      "direction": "out",
+      "hex": "22 33 10 01 01 81 07 00 00 00 00 00 00 66 77 00",
+      "frame": {
+        "type": 16,
+        "count": 1,
+        "index": 1,
+        "command": 33031,
+        "value": 0
+      }
+    },
+    {
+      "direction": "in",
+      "hex": "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+      "frame": null
+    },
+    {
+      "direction": "in",
+      "hex": "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+      "frame": null
+    },
+    {
+      "direction": "in",
+      "hex": "22 33 10 01 01 81 07 00 00 00 c0 bd bd 66 77 00",
+      "frame": {
+        "type": 16,
+        "count": 1,
+        "index": 1,
+        "command": 33031,
+        "value": 192
+      }
+    },
+    {
+      "direction": "out",
+      "hex": "22 33 10 01 01 71 00 00 00 00 00 00 00 66 77 00",
+      "frame": {
+        "type": 16,
+        "count": 1,
+        "index": 1,
+        "command": 28928,
+        "value": 0
+      }
+    },
+    {
+      "direction": "in",
+      "hex": "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+      "frame": null
+    },
+    {
+      "direction": "in",
+      "hex": "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+      "frame": null
+    },
+    {
+      "direction": "in",
+      "hex": "22 33 20 01 01 71 00 00 00 00 01 1c 89 66 77 00",
+      "frame": {
+        "type": 32,
+        "count": 1,
+        "index": 1,
+        "command": 28928,
+        "value": 1
+      }
+    },
+    {
+      "direction": "out",
+      "hex": "22 33 10 01 01 75 00 00 00 00 00 00 00 66 77 00",
+      "frame": {
+        "type": 16,
+        "count": 1,
+        "index": 1,
+        "command": 29952,
+        "value": 0
+      }
+    },
+    {
+      "direction": "in",
+      "hex": "22 33 20 01 01 82 00 00 01 00 00 df 0d 66 77 00",
+      "frame": {
+        "type": 32,
+        "count": 1,
+        "index": 1,
+        "command": 33280,
+        "value": 65536
+      }
+    },
+    {
+      "direction": "in",
+      "hex": "22 33 20 01 01 83 00 00 04 00 00 0f 1c 66 77 00",
+      "frame": {
+        "type": 32,
+        "count": 1,
+        "index": 1,
+        "command": 33536,
+        "value": 262144
+      }
+    },
+    {
+      "direction": "in",
+      "hex": "22 33 20 01 01 75 00 00 00 00 00 58 49 66 77 00",
+      "frame": {
+        "type": 32,
+        "count": 1,
+        "index": 1,
+        "command": 29952,
+        "value": 0
+      }
+    },
+    {
+      "direction": "out",
+      "hex": "22 33 10 01 01 12 04 00 00 00 00 00 00 66 77 00",
+      "frame": {
+        "type": 16,
+        "count": 1,
+        "index": 1,
+        "command": 4612,
+        "value": 0
+      }
+    },
+    {
+      "direction": "in",
+      "hex": "22 33 20 01 01 75 00 00 00 00 00 58 49 66 77 00",
+      "frame": {
+        "type": 32,
+        "count": 1,
+        "index": 1,
+        "command": 29952,
+        "value": 0
+      }
+    },
+    {
+      "direction": "in",
+      "hex": "22 33 20 03 00 11 1c 00 00 ff 00 57 40 66 77 00",
+      "frame": {
+        "type": 32,
+        "count": 3,
+        "index": 0,
+        "command": 4380,
+        "value": 65280
+      }
+    },
+    {
+      "direction": "in",
+      "hex": "22 33 20 03 01 11 1c 00 00 00 00 67 11 66 77 00",
+      "frame": {
+        "type": 32,
+        "count": 3,
+        "index": 1,
+        "command": 4380,
+        "value": 0
+      }
+    },
+    {
+      "direction": "in",
+      "hex": "22 33 20 03 02 11 1c 00 00 00 00 67 22 66 77 00",
+      "frame": {
+        "type": 32,
+        "count": 3,
+        "index": 2,
+        "command": 4380,
+        "value": 0
+      }
+    },
+    {
+      "direction": "in",
+      "hex": "22 33 10 01 01 12 04 00 00 00 07 4c a5 66 77 00",
+      "frame": {
+        "type": 16,
+        "count": 1,
+        "index": 1,
+        "command": 4612,
+        "value": 7
+      }
+    },
+    {
+      "direction": "out",
+      "hex": "22 33 10 01 01 12 06 00 00 00 00 00 00 66 77 00",
+      "frame": {
+        "type": 16,
+        "count": 1,
+        "index": 1,
+        "command": 4614,
+        "value": 0
+      }
+    },
+    {
+      "direction": "in",
+      "hex": "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+      "frame": null
+    },
+    {
+      "direction": "in",
+      "hex": "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+      "frame": null
+    },
+    {
+      "direction": "in",
+      "hex": "22 33 10 01 01 12 06 00 00 00 01 8e 5c 66 77 00",
+      "frame": {
+        "type": 16,
+        "count": 1,
+        "index": 1,
+        "command": 4614,
+        "value": 1
+      }
+    },
+    {
+      "direction": "out",
+      "hex": "22 33 10 01 01 81 0a 00 00 00 00 00 00 66 77 00",
+      "frame": {
+        "type": 16,
+        "count": 1,
+        "index": 1,
+        "command": 33034,
+        "value": 0
+      }
+    },
+    {
+      "direction": "in",
+      "hex": "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+      "frame": null
+    },
+    {
+      "direction": "in",
+      "hex": "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+      "frame": null
+    },
+    {
+      "direction": "in",
+      "hex": "22 33 10 0c 01 81 0a 00 00 0f 02 84 d5 66 77 00",
+      "frame": {
+        "type": 16,
+        "count": 12,
+        "index": 1,
+        "command": 33034,
+        "value": 3842
+      }
+    },
+    {
+      "direction": "in",
+      "hex": "22 33 10 0c 02 81 0a 00 00 00 82 d4 e2 66 77 00",
+      "frame": {
+        "type": 16,
+        "count": 12,
+        "index": 2,
+        "command": 33034,
+        "value": 130
+      }
+    },
+    {
+      "direction": "in",
+      "hex": "22 33 10 0c 03 81 0a 00 00 03 8e e1 f2 66 77 00",
+      "frame": {
+        "type": 16,
+        "count": 12,
+        "index": 3,
+        "command": 33034,
+        "value": 910
+      }
+    },
+    {
+      "direction": "in",
+      "hex": "22 33 10 0c 04 81 0a 00 00 02 9e 7d 84 66 77 00",
+      "frame": {
+        "type": 16,
+        "count": 12,
+        "index": 4,
+        "command": 33034,
+        "value": 670
+      }
+    },
+    {
+      "direction": "in",
+      "hex": "22 33 10 0c 05 81 0a 00 00 03 5c bc 14 66 77 00",
+      "frame": {
+        "type": 16,
+        "count": 12,
+        "index": 5,
+        "command": 33034,
+        "value": 860
+      }
+    },
+    {
+      "direction": "in",
+      "hex": "22 33 10 0c 06 81 0a 00 00 03 de dd a7 66 77 00",
+      "frame": {
+        "type": 16,
+        "count": 12,
+        "index": 6,
+        "command": 33034,
+        "value": 990
+      }
+    },
+    {
+      "direction": "in",
+      "hex": "22 33 10 0c 07 81 0a 00 00 00 00 b5 37 66 77 00",
+      "frame": {
+        "type": 16,
+        "count": 12,
+        "index": 7,
+        "command": 33034,
+        "value": 0
+      }
+    },
+    {
+      "direction": "in",
+      "hex": "22 33 10 0c 08 81 0a 00 00 00 00 b5 c8 66 77 00",
+      "frame": {
+        "type": 16,
+        "count": 12,
+        "index": 8,
+        "command": 33034,
+        "value": 0
+      }
+    },
+    {
+      "direction": "in",
+      "hex": "22 33 10 0c 09 81 0a 00 00 00 00 75 d8 66 77 00",
+      "frame": {
+        "type": 16,
+        "count": 12,
+        "index": 9,
+        "command": 33034,
+        "value": 0
+      }
+    },
+    {
+      "direction": "in",
+      "hex": "22 33 10 0c 0a 81 0a 00 00 00 00 75 eb 66 77 00",
+      "frame": {
+        "type": 16,
+        "count": 12,
+        "index": 10,
+        "command": 33034,
+        "value": 0
+      }
+    },
+    {
+      "direction": "in",
+      "hex": "22 33 10 0c 0b 81 0a 00 00 00 00 b5 fb 66 77 00",
+      "frame": {
+        "type": 16,
+        "count": 12,
+        "index": 11,
+        "command": 33034,
+        "value": 0
+      }
+    },
+    {
+      "direction": "in",
+      "hex": "22 33 10 0c 0c 81 0a 00 00 00 00 75 8d 66 77 00",
+      "frame": {
+        "type": 16,
+        "count": 12,
+        "index": 12,
+        "command": 33034,
+        "value": 0
+      }
+    }
+  ],
+  "capped": false,
+  "summary": {
+    "protocol": "next",
+    "capability": 192,
+    "firmwareRaw": 775,
+    "stateRaw": 1,
+    "gain": "low",
+    "headphoneVolumeDb": null,
+    "peqEnabled": true,
+    "peqRuntimeActive": true,
+    "presetRaw": 1,
+    "outputRaw": null,
+    "muteRaw": null,
+    "hardwareWritesEnabled": false
+  }
+}
