@@ -44,7 +44,7 @@ class Device extends EventTarget {
     }
     if (f.command === 0x1106) {
       this.emit({command:f.command,count:2,index:0,value:3}); this.emit({command:f.command,count:2,index:1,value:0});
-      for(let j=0;j<3;j++) this.presetWords.forEach((value,index)=>this.emit({command:f.command,count:78,index,value}));
+      for(let j=0;j<3;j++) (this.profileWords?.[j] ?? this.presetWords).forEach((value,index)=>this.emit({command:f.command,count:78,index,value}));
     } else if(f.command === 0x810a) this.output.forEach((value,index)=>this.emit({command:f.command,count:12,index:index+1,value}));
     else if(f.command === 0x111c) [0xff00,0,0].forEach((value,index)=>this.emit({command:f.command,count:3,index,value}));
     else this.emit({...f,value:this.values.get(f.command)});
@@ -229,4 +229,107 @@ test('final snapshot rejects a changed preset even without a volume restoration'
   device.hook=f=>{if(f.type===32&&f.command===0x110e) device.values.set(0x1206,2);};
   await assert.rejects(controller.apply('a',condition(controller),-32,'dx1'),/Preset changed|settings changed/);
   assert.equal(controller.applied,null);await controller.close();
+});
+
+function profileWords(db) {
+  const result = words();
+  result[5] = result[7] = Math.round(0x2000000 * 10 ** (db / 20));
+  return result;
+}
+async function connectProfiles() {
+  const device = new Device();
+  device.profileWords = [profileWords(-3), profileWords(-10.2), profileWords(-6)];
+  const controller = new Dx1Controller(new Dx1Transport(device, { timeoutMs: 50 }));
+  await controller.connect();
+  return { device, controller };
+}
+const profileCondition = (controller, presetIndex) => ({ peq: true, gain: 'low',
+  preampDb: controller.presetPreamp(presetIndex), presetIndex, trimDb: 0 });
+
+test('compares every stored profile using its own preamp and verifies the new index', async () => {
+  const { device, controller } = await connectProfiles();
+  assert.deepEqual(controller.presets.map((_, i) => controller.presetPreamp(i)), [-3, -10.2, -6]);
+  for (const index of [0, 2, 1]) {
+    const next = profileCondition(controller, index);
+    await controller.apply('b', next, Math.round(-30 - next.preampDb), 'dx1');
+    assert.equal(controller.state.presetIndex, index);
+    assert.equal(controller.presetIndex, index);
+    assert.equal(controller.state.preampDb, next.preampDb);
+    assert.equal(device.values.get(0x1206), index);
+    assert.equal(device.values.get(0x1204), 7);
+    assert.ok(controller.applied.timings.preflight >= 0);
+  }
+  assert.equal(device.sent.some(f => f.command === 0x7500), false);
+  await controller.close();
+});
+
+test('bypass keeps the selected profile and can enable a different saved profile', async () => {
+  const { device, controller } = await connectProfiles();
+  await controller.apply('a', { peq: false, gain: 'low', preampDb: 0, trimDb: 0 }, -30, 'dx1');
+  assert.equal(device.values.get(0x1206), 1);
+  await controller.apply('b', profileCondition(controller, 2), -24, 'dx1');
+  assert.equal(controller.state.presetIndex, 2);
+  assert.equal(controller.state.preampDb, -6);
+  await controller.close();
+});
+
+test('invalid profiles and mismatched preamp fail before any device request', async () => {
+  const { device, controller } = await connectProfiles();
+  const count = device.sent.length;
+  for (const index of [-1, 3, 0.5, '0']) {
+    await assert.rejects(controller.apply('b', { ...condition(controller, true), presetIndex: index }, -20, 'dx1'));
+  }
+  await assert.rejects(controller.apply('b', { ...condition(controller, true), presetIndex: 0 }, -20, 'dx1'), /pre-gain/);
+  controller.presets[0].right.gainDb = -4;
+  await assert.rejects(controller.apply('b', { ...condition(controller, true), presetIndex: 0 }, -20, 'dx1'), /differ/);
+  assert.equal(device.sent.length, count);
+  await controller.close();
+});
+
+test('false profile acknowledgement cannot restore a louder device volume', async () => {
+  const { device, controller } = await connectProfiles();
+  // Begin on the less attenuated EQ1, then request EQ2 and a louder device level.
+  await controller.apply('a', profileCondition(controller, 0), -27, 'dx1');
+  const count = device.sent.length;
+  device.hook = f => { if (f.type === 32 && f.command === 0x1206) { device.emit(f); return false; } };
+  await assert.rejects(controller.apply('b', profileCondition(controller, 1), -20, 'dx1'), /Preset changed|settings changed/);
+  assert.equal(device.sent.slice(count).some(f => f.type === 32 && f.command === 0x810a), false);
+  assert.equal(controller.applied, null);
+  await controller.close();
+});
+
+test('third-profile interference during a switch stops final restoration', async () => {
+  const { device, controller } = await connectProfiles();
+  await controller.apply('a', profileCondition(controller, 0), -27, 'dx1');
+  device.hook = f => { if (f.type === 32 && f.command === 0x1206) device.emit({ command: 0x1206, value: 2 }); };
+  const count = device.sent.length;
+  await assert.rejects(controller.apply('b', profileCondition(controller, 1), -20, 'dx1'), /settings changed/);
+  assert.equal(device.sent.slice(count).filter(f => f.type === 32).length, 1);
+  await controller.close();
+});
+
+test('rounded PEQ endpoints require just one volume write per direction', async () => {
+  const { device, controller } = await connect();
+  device.output[2] = 790; // -20 dB with -10.2 dB preamp.
+  for (const [peq, volume] of [[false, -30], [true, -20]]) {
+    const start = device.sent.length;
+    await controller.apply(peq ? 'b' : 'a', condition(controller, peq), volume, 'dx1');
+    const frames = device.sent.slice(start);
+    assert.equal(frames.filter(f => f.type === 32 && f.command === 0x810a).length, 1);
+    const outputs = frames.filter(f => f.type === 16 && f.command === 0x810a);
+    assert.equal(outputs.length, peq ? 2 : 3); // preflight, optional attenuation proof, final.
+    assert.equal(controller.state.volumeDb, volume);
+  }
+  await controller.close();
+});
+
+test('profiles with equal preamp switch without writing volume', async () => {
+  const { device, controller } = await connect();
+  const count = device.sent.length;
+  await controller.apply('b', profileCondition(controller, 2), -8, 'dx1');
+  const writes = device.sent.slice(count).filter(f => f.type === 32);
+  assert.equal(writes.length, 1);
+  assert.equal(writes[0].command, 0x1206);
+  assert.equal(controller.state.presetIndex, 2);
+  await controller.close();
 });

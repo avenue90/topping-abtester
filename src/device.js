@@ -1,4 +1,4 @@
-import { validateCondition, validateLevel } from './levels.js?v=hardware-8';
+import { validateCondition, validateLevel } from './levels.js?v=hardware-9';
 
 export function isDx1II(name) {
   return /(?:^|[^A-Z0-9])DX1\s*II(?:$|[^A-Z0-9])/.test(

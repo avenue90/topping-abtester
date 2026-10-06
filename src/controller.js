@@ -1,4 +1,4 @@
-import { safeSwitchVolume, validateCondition, validateLevel, validateStep } from './levels.js?v=hardware-8';
+import { safeSwitchVolume, validateCondition, validateLevel, validateStep } from './levels.js?v=hardware-9';
 
 export class ComparisonController {
   constructor(device) { this.device = device; this.busy = false; this.applied = null; }

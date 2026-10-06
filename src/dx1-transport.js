@@ -1,6 +1,6 @@
-import { hasDx1ControlReports } from './device.js?v=hardware-8';
-import { parseFrame, READ_COMMANDS, buildReadRequest } from './dx1-protocol.js?v=hardware-8';
-import { PresetCollector } from './dx1-presets.js?v=hardware-8';
+import { hasDx1ControlReports } from './device.js?v=hardware-9';
+import { parseFrame, READ_COMMANDS, buildReadRequest } from './dx1-protocol.js?v=hardware-9';
+import { PresetCollector } from './dx1-presets.js?v=hardware-9';
 
 export class Dx1Transport {
   constructor(device, { hid = globalThis.navigator?.hid, timeoutMs = 1800, requireCrc = true } = {}) {

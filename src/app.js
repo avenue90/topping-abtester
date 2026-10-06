@@ -1,9 +1,9 @@
-import { targetVolume, effectiveLevel } from './levels.js?v=hardware-8';
-import { inspectDx1, DemoDevice } from './device.js?v=hardware-8';
-import { ComparisonController } from './controller.js?v=hardware-8';
-import { requestDx1Diagnostics } from './dx1-diagnostics.js?v=hardware-8';
-import { Dx1Transport, selectDx1 } from './dx1-transport.js?v=hardware-8';
-import { Dx1Controller } from './dx1-controller.js?v=hardware-8';
+import { targetVolume, effectiveLevel } from './levels.js?v=hardware-9';
+import { inspectDx1, DemoDevice } from './device.js?v=hardware-9';
+import { ComparisonController } from './controller.js?v=hardware-9';
+import { requestDx1Diagnostics } from './dx1-diagnostics.js?v=hardware-9';
+import { Dx1Transport, selectDx1 } from './dx1-transport.js?v=hardware-9';
+import { Dx1Controller } from './dx1-controller.js?v=hardware-9';
 
 const $ = selector => document.querySelector(selector);
 let controller = new ComparisonController(new DemoDevice());
@@ -13,10 +13,28 @@ const step = () => $('#step').value === 'dx1' ? 'dx1' : Number($('#step').value)
 function card(side) { return document.querySelector(`[data-side="${side}"]`); }
 function condition(side) {
   const el = card(side);
-  return { peq: el.querySelector('.peq').value === 'on',
-    preampDb: el.querySelector('.preamp').valueAsNumber,
+  const peq = el.querySelector('.peq').value === 'on';
+  const presetIndex = Number(el.querySelector('.profile').value);
+  return { peq,
+    ...(controller.hardware && peq ? { presetIndex } : {}),
+    preampDb: controller.hardware ? (peq ? controller.presetPreamp(presetIndex) : 0) : el.querySelector('.preamp').valueAsNumber,
     gain: el.querySelector('.gain').value,
     trimDb: el.querySelector('.trim').valueAsNumber };
+}
+function profileChoices() {
+  for (const side of ['a', 'b']) {
+    const select = card(side).querySelector('.profile');
+    select.replaceChildren();
+    if (controller.hardware) {
+      controller.presets.forEach((preset, index) => {
+        const option = new Option(`EQ${index + 1} · ${preset.name || 'Unnamed'}`, String(index));
+        try { controller.presetPreamp(index); }
+        catch { option.disabled = true; option.textContent += ' · cannot level-match'; }
+        select.add(option);
+      });
+      select.value = String(controller.presetIndex);
+    } else select.add(new Option('Connect to load profiles', ''));
+  }
 }
 function volume(side) {
   return targetVolume($('#reference').valueAsNumber, condition(side), step());
@@ -49,11 +67,16 @@ function render() {
   $('#hardware-state').textContent = hardware && controller.state
     ? `${controller.preset.name || 'Stored preset'} (EQ${controller.presetIndex + 1}) · pre-gain ${controller.preampDb} dB · last read ${controller.state.volumeDb} dB / gain unchanged / PEQ ${controller.state.peq ? 'on' : 'off'}`
     : webHidAvailable
-      ? 'Live control switches PEQ only. Gain is never read or changed; gain comparison remains available in simulation.'
+      ? 'Live control compares saved EQ1 / EQ2 / EQ3 profiles and PEQ off. Gain is never read or changed; gain comparison remains available in simulation.'
       : 'WebHID is unavailable in this browser. Simulation still works; live controls require a desktop browser with WebHID support.';
   for (const side of ['a', 'b']) {
     const el = card(side);
     const target = el.querySelector('.target');
+    el.querySelector('.profile').disabled = locked || !hardware || el.querySelector('.peq').value !== 'on';
+    if (hardware) {
+      try { el.querySelector('.preamp').value = condition(side).preampDb; }
+      catch { el.querySelector('.preamp').value = ''; }
+    }
     let valid = true;
     let selected = false;
     try {
@@ -81,12 +104,15 @@ function message(title, detail) {
 async function choose(side) {
   if (controller.busy || inspecting) return;
   try {
+    $('#switch-timing').textContent = '';
     const operation = controller.apply(side, condition(side), volume(side), step());
     render();
     if (controller.hardware) message(`Applying ${side.toUpperCase()}…`, 'Reading device state and verifying each hardware change.');
     const result = await operation;
+    $('#switch-timing').textContent = result.timings
+      ? `State read ${result.timings.preflight} ms · attenuation ${result.timings.attenuation} ms · EQ ${result.timings.eq} ms · restore ${result.timings.restore} ms · final check ${result.timings.verification} ms` : '';
     message(`${controller.hardware ? 'Applied' : 'Simulated'} ${side.toUpperCase()} at ${result.volumeDb.toFixed(1)} dB`,
-      `PEQ ${result.condition.peq ? 'on' : 'off'} · ${controller.hardware ? 'gain unchanged' : `${result.condition.gain} gain`}. ${controller.hardware
+      `${controller.hardware && result.condition.peq ? `EQ${controller.presetIndex + 1}` : `PEQ ${result.condition.peq ? 'on' : 'off'}`} · ${controller.hardware ? 'gain unchanged' : `${result.condition.gain} gain`}. ${controller.hardware
         ? `Hardware readback verified in ${result.durationMs} ms.` : 'No audio or device settings are changed.'}`);
   } catch (error) {
     message('Comparison not completed', `${error.message} ${controller.hardware
@@ -114,6 +140,7 @@ $('#demo').addEventListener('click', async () => {
   try {
     if (controller.hardware) await controller.close();
     controller = new ComparisonController(new DemoDevice());
+    profileChoices(); $('#switch-timing').textContent = '';
     message('Simulation ready', 'The hardware connection is closed. Any applied DAC settings remain as they are.');
   } catch (error) { message('Could not close hardware session', error.message); }
   finally { inspecting = false; render(); }
@@ -134,6 +161,8 @@ $('#connect-hardware').addEventListener('click', async () => {
         else if (reason === 'changed') message('DAC settings changed', 'The previous A/B selection is no longer confirmed. The next switch will read the current device state.');
         render();
       };
+      profileChoices();
+      $('#switch-timing').textContent = '';
       $('#step').value = 'dx1';
       $('#reference').value = Math.min(0, effectiveLevel(state.volumeDb, state)).toFixed(2);
       for (const side of ['a', 'b']) {
@@ -144,10 +173,10 @@ $('#connect-hardware').addEventListener('click', async () => {
       card('a').querySelector('.peq').value = 'off';
       card('b').querySelector('.peq').value = 'on';
       hardwareReport = { format: 'dx1-controller-session-v1', firmwareRaw: controller.firmwareRaw,
-        presetIndex: controller.presetIndex, preset: controller.preset, initialState: state,
+        presetIndex: controller.presetIndex, presets: controller.presets, initialState: state,
         records: controller.transport.records };
       $('#hardware-report').textContent = JSON.stringify(hardwareReport, null, 2);
-      message('DX1 II connected — PEQ A/B ready', 'A is PEQ off; B uses the stored preset. Gain is locked and untouched. Apply A or B changes volume and PEQ only.');
+      message('DX1 II connected — PEQ A/B ready', 'A starts with PEQ off; B starts with the current EQ. Turn PEQ on in both cards and choose any two saved profiles to compare EQ1, EQ2 or EQ3. Pre-gain is read separately for each profile. Gain stays unchanged.');
     } catch (error) {
       hardwareReport = { format: 'dx1-controller-session-v1', error: error.message, records: candidate.transport.records };
       $('#hardware-report').textContent = JSON.stringify(hardwareReport, null, 2);

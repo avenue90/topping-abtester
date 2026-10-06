@@ -1,6 +1,6 @@
-import { decodeNextOutput, READ_COMMANDS, decodeVolume } from './dx1-protocol.js?v=hardware-8';
-import { matchedPreamp } from './dx1-presets.js?v=hardware-8';
-import { safeSwitchVolume, validateCondition, validateLevel } from './levels.js?v=hardware-8';
+import { decodeNextOutput, READ_COMMANDS, decodeVolume } from './dx1-protocol.js?v=hardware-9';
+import { matchedPreamp } from './dx1-presets.js?v=hardware-9';
+import { safePeqSwitchVolume, validateCondition, validateLevel } from './levels.js?v=hardware-9';
 
 // Only volume and PEQ controls are supported. No DSP preset writes,
 // output routing, firmware, reset, or persistence commands are exposed.
@@ -30,7 +30,7 @@ function requireHeadphones(output) {
 export class Dx1Controller {
   constructor(transport) {
     this.transport = transport; this.busy = false; this.applied = null; this.hardware = true;
-    this.initialized = false; this.state = null; this.preset = null; this.presetIndex = null;
+    this.initialized = false; this.state = null; this.preset = null; this.presetIndex = null; this.presets = [];
     this.failure = null; this.transaction = null;
     transport.onFault = error => { this.failure = error; this.applied = null; this.onChange?.(); };
     // Invalidate the displayed applied state when the knob or another controller
@@ -72,7 +72,7 @@ export class Dx1Controller {
     }
     let unexpected = false;
     if (frame.command === 0x1204) unexpected = !(frame.value & 4) || !t.peqs.has(Boolean(frame.value & 2));
-    if (frame.command === 0x1206) unexpected = frame.value !== this.presetIndex;
+    if (frame.command === 0x1206) unexpected = !t.presets.has(frame.value);
     if (frame.command === 0x7100) unexpected = ![1, 11].includes(frame.value);
     if (frame.command === 0x111c && frame.index === 0) unexpected = (frame.value >>> 24) !== 0;
     if (frame.command === 0x810a && frame.count === 12) {
@@ -90,15 +90,19 @@ export class Dx1Controller {
       if (await this.single('capability') !== 192 || this.firmwareRaw !== 0x0307) {
         throw new Error('This controller currently supports the verified DX1 II Next firmware 0x0307 only.');
       }
-      const presets = await this.transport.readPresets();
+      this.presets = await this.transport.readPresets();
       this.presetIndex = await this.single('preset');
       if (![0, 1, 2].includes(this.presetIndex)) throw new Error('Unknown active preset.');
-      this.preset = presets[this.presetIndex];
+      this.preset = this.presets[this.presetIndex];
       this.preampDb = matchedPreamp(this.preset);
       this.state = await this.readState();
       this.initialized = true;
       return this.state;
     } catch (error) { await this.transport.close(); throw error; }
+  }
+  presetPreamp(index) {
+    if (!Number.isInteger(index) || index < 0 || index > 2) throw new Error('Invalid EQ profile.');
+    return matchedPreamp(this.presets[index]);
   }
   async readState() {
     const reads = await this.transport.readMany(['state', { key: 'nextOutput', count: 12 },
@@ -133,20 +137,27 @@ export class Dx1Controller {
     validateCondition(next); validateLevel(volumeDb);
     buildControlWrite('volume', volumeDb);
     if (next.gain !== 'low') throw new Error('Live gain switching is unavailable; use simulation for gain comparisons.');
-    if (step !== 'dx1' || next.preampDb !== this.preampDb) throw new Error('Use the device-read pre-gain and DX1 II volume steps.');
+    const targetPreset = next.peq ? (next.presetIndex ?? this.presetIndex) : this.presetIndex;
+    const targetPreamp = this.presetPreamp(targetPreset);
+    if (step !== 'dx1' || (next.peq && next.preampDb !== targetPreamp)) throw new Error('Use the device-read pre-gain and DX1 II volume steps.');
     this.busy = true; this.applied = null;
     const started = performance.now();
+    const timings = {}; let stageStarted = started;
+    const mark = name => { const now = performance.now(); timings[name] = Math.round(now - stageStarted); stageStarted = now; };
     try {
       // Stored preset data is fixed for this connection. Incoming configuration
       // activity invalidates it; reconnect after editing PEQ in another app.
       let actual = await this.readState();
       this.guard();
       if (actual.analogMuted) throw new Error('The headphones are muted. Unmute on the DAC before starting A/B.');
-      const quiet = safeSwitchVolume(actual.volumeDb, actual, volumeDb, next, 'dx1');
+      mark('preflight');
+      const changePeq = actual.peq !== next.peq || (next.peq && actual.presetIndex !== targetPreset);
+      const expected = { ...next, presetIndex: targetPreset };
+      const quiet = safePeqSwitchVolume(actual.volumeDb, actual, volumeDb, next, 'dx1');
       const outputState = actual.outputMask | (actual.peqRoute === 'both' ? 128 : 0);
       this.transaction = { conflict: false, outputState,
         volumes: new Set([Math.round((actual.volumeDb + 99) * 10)]),
-        peqs: new Set([actual.peq]) };
+        peqs: new Set([actual.peq]), presets: new Set([actual.presetIndex]) };
       let wrote = false;
 
       // Phase 1: Prove attenuation took effect before changing PEQ.
@@ -157,7 +168,7 @@ export class Dx1Controller {
         this.transaction.volumes = new Set([Math.round((quiet + 99) * 10)]);
         actual = { ...actual, volumeDb: quiet };
         wrote = true;
-        if (actual.peq !== next.peq) {
+        if (changePeq) {
           const output = decodeNextOutput(await this.transport.read('nextOutput', { count: 12 }));
           requireHeadphones(output);
           this.guard();
@@ -168,21 +179,27 @@ export class Dx1Controller {
       }
       this.guard();
 
+      mark('attenuation');
+
       // Phase 2: Switch PEQ at the attenuated volume. Live gain is untouched.
-      if (actual.peq !== next.peq) {
+      if (changePeq) {
         this.transaction.peqs.add(next.peq);
-        await this.transport.write(buildControlWrite('peq', next.peq ? this.presetIndex : false));
+        this.transaction.presets.add(targetPreset);
+        await this.transport.write(buildControlWrite('peq', next.peq ? targetPreset : false));
+        this.transaction.presets = new Set([targetPreset]);
         this.transaction.peqs = new Set([next.peq]);
         actual = { ...actual, peq: next.peq };
         wrote = true;
       }
       this.guard();
 
+      mark('eq');
+
       // Phase 3: An echo alone cannot establish the resulting PEQ state.
       // Verify PEQ and the preset before raising volume.
       if (actual.volumeDb !== volumeDb) {
         const preRaise = await this.transport.readMany(['peq', 'preset']);
-        this.verifyPeq(preRaise, next);
+        this.verifyPeq(preRaise, expected);
         this.guard();
 
         // Phase 4: Restore volume to the target level.
@@ -194,6 +211,8 @@ export class Dx1Controller {
       }
       this.guard();
 
+      mark('restore');
+
       // Phase 5: Confirm the final hardware state matches the target.
       if (wrote) {
         const final = await this.transport.readMany([
@@ -201,7 +220,7 @@ export class Dx1Controller {
         const output = decodeNextOutput(final.nextOutput);
         requireHeadphones(output);
         const fPeq = final.peq[0].value;
-        this.verifyPeq(final, next);
+        this.verifyPeq(final, expected);
         if (!(fPeq & 4) || Boolean(fPeq & 1) !== Boolean(fPeq & 2)) {
           throw new Error('PEQ runtime did not match its enabled state.');
         }
@@ -211,11 +230,13 @@ export class Dx1Controller {
           throw new Error('Hardware readback did not match the requested state. Stopped without restoring volume.');
         }
         this.state = { ...output, gain: 'low', gainKnown: false, peq: next.peq,
-          preampDb: this.preampDb, trimDb: 0, presetIndex: this.presetIndex };
+          preampDb: targetPreamp, trimDb: 0, presetIndex: targetPreset };
       }
 
       this.guard();
-      this.applied = { side, condition: next, volumeDb, durationMs: Math.round(performance.now() - started) };
+      this.presetIndex = targetPreset; this.preset = this.presets[targetPreset]; this.preampDb = targetPreamp;
+      mark('verification');
+      this.applied = { side, condition: next, volumeDb, timings, durationMs: Math.round(performance.now() - started) };
       return this.applied;
     } catch (error) {
       this.failure = error; this.applied = null;
@@ -231,7 +252,7 @@ export class Dx1Controller {
     if (Boolean(peq & 2) !== expected.peq) {
       throw new Error('Hardware readback did not match the requested state. Stopped without restoring volume.');
     }
-    if (reads.preset[0].value !== this.presetIndex) {
+    if (reads.preset[0].value !== expected.presetIndex) {
       throw new Error('Preset changed during switch.');
     }
   }

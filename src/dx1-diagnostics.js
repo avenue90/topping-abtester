@@ -1,5 +1,5 @@
-import { hasDx1ControlReports } from './device.js?v=hardware-8';
-import { READ_COMMANDS, buildReadRequest, parseFrame, summarizeReads } from './dx1-protocol.js?v=hardware-8';
+import { hasDx1ControlReports } from './device.js?v=hardware-9';
+import { READ_COMMANDS, buildReadRequest, parseFrame, summarizeReads } from './dx1-protocol.js?v=hardware-9';
 
 // A short, read-only session. No connect announcement, heartbeat, preset upload,
 // mute, gain, volume, or other write command can be sent by this module.

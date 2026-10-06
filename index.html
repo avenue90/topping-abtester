@@ -14,7 +14,7 @@
     </header>
 
     <section class="intro card">
-      <div><h2>Level matched comparison</h2><p>Compare PEQ and headphone gain in simulation, or connect for live PEQ and volume switching on tested DX1 II firmware 0x0307. Live gain switching is unavailable.</p><p id="hardware-state"></p></div>
+      <div><h2>Level matched comparison</h2><p>Compare PEQ and headphone gain in simulation, or connect for live EQ profile, PEQ bypass and volume switching on tested DX1 II firmware 0x0307. Live gain switching is unavailable.</p><p id="hardware-state"></p></div>
       <div class="device-actions"><button id="connect-hardware" class="primary">Connect hardware controls</button><button id="connect" class="secondary">Inspect DX1 II</button><button id="demo" class="secondary">Reset simulation</button></div>
     </section>
 
@@ -28,7 +28,8 @@
     <section class="compare">
       <article class="condition card" data-side="a">
         <div class="condition-head"><span class="letter">A</span><input class="name" aria-label="Name for A" value="Reference"></div>
-        <label class="row">PEQ <select class="peq"><option value="off">Off</option><option value="on">On — current device preset</option></select></label>
+        <label class="row">PEQ <select class="peq"><option value="off">Off</option><option value="on">On — selected profile</option></select></label>
+        <label class="row">EQ profile <select class="profile" disabled><option>Connect to load profiles</option></select></label>
         <label class="row">Pre-gain <div class="field"><input class="preamp" type="number" min="-40" max="10" step="0.1" value="0"><span>dB</span></div></label>
         <label class="row">Headphone gain <select class="gain"><option value="low">Low</option><option value="high">High</option></select></label>
         <label class="row">Listening trim <div class="field"><input class="trim" type="number" min="-12" max="12" step="0.5" value="0"><span>dB</span></div></label>
@@ -37,7 +38,8 @@
       </article>
       <article class="condition card" data-side="b">
         <div class="condition-head"><span class="letter">B</span><input class="name" aria-label="Name for B" value="PEQ or high gain"></div>
-        <label class="row">PEQ <select class="peq"><option value="off">Off</option><option value="on" selected>On — current device preset</option></select></label>
+        <label class="row">PEQ <select class="peq"><option value="off">Off</option><option value="on" selected>On — selected profile</option></select></label>
+        <label class="row">EQ profile <select class="profile" disabled><option>Connect to load profiles</option></select></label>
         <label class="row">Pre-gain <div class="field"><input class="preamp" type="number" min="-40" max="10" step="0.1" value="-10.2"><span>dB</span></div></label>
         <label class="row">Headphone gain <select class="gain"><option value="low">Low</option><option value="high">High</option></select></label>
         <label class="row">Listening trim <div class="field"><input class="trim" type="number" min="-12" max="12" step="0.5" value="0"><span>dB</span></div></label>
@@ -45,7 +47,7 @@
         <p class="rounding"></p><button class="choose primary" data-target="b">Simulate B</button>
       </article>
     </section>
-    <section class="notice card" role="status" aria-live="polite"><strong id="message">Simulation: no audio or hardware settings are changed.</strong><p id="detail">Live mode switches PEQ and volume only. Gain is never read or changed. Presets are never edited.</p></section>
+    <section class="notice card" role="status" aria-live="polite"><strong id="message">Simulation: no audio or hardware settings are changed.</strong><p id="detail">Compare any two saved EQ1 / EQ2 / EQ3 profiles, or a profile against PEQ off. Gain is never read or changed. Presets are never edited.</p><p id="switch-timing"></p></section>
     <details id="diagnostics" class="card diagnostics" hidden><summary>Device descriptor</summary><pre id="descriptor"></pre></details>
     <section class="card diagnostics">
       <h2>Hardware diagnostics</h2>
@@ -55,6 +57,6 @@
     </section>
     <footer>Pre-gain compensation matches the unboosted parts of the signal mathematically. EQ changes tonal balance, so use listening trim for perceived-level comparison. Live mode leaves headphone gain unchanged. This independent project is not affiliated with Topping. Device communication stays in your browser; this site has no account or telemetry.</footer>
   </main>
-  <script type="module" src="src/app.js?v=hardware-8"></script>
+  <script type="module" src="src/app.js?v=hardware-9"></script>
 </body>
 </html>

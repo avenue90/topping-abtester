@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { targetVolume, effectiveLevel, safeSwitchVolume } from '../src/levels.js';
+import { targetVolume, effectiveLevel, safeSwitchVolume, safePeqSwitchVolume } from '../src/levels.js';
 
 test('pre-gain is offset by device volume', () => {
   const b = { peq: true, preampDb: -10.2, gain: 'low', trimDb: 0 };
@@ -57,6 +57,26 @@ test('every intermediate state stays below both endpoint levels', () => {
     const ceiling = Math.min(effectiveLevel(a, from), effectiveLevel(b, to));
     for (const c of [from, { ...from, gain: to.gain }, to]) {
       assert.ok(effectiveLevel(dip, c) <= ceiling + 1e-9);
+    }
+  }
+});
+
+
+test('live PEQ switching avoids rounding dips and never exceeds the louder endpoint', () => {
+  const off = { peq: false, preampDb: 0, gain: 'low', trimDb: 0 };
+  const on = { ...off, peq: true, preampDb: -10.2 };
+  assert.equal(safePeqSwitchVolume(-30, off, -20, on), -30);
+  assert.equal(safePeqSwitchVolume(-20, on, -30, off), -30);
+  assert.throws(() => safePeqSwitchVolume(-30, off, -40, { ...on, gain: 'high' }), /unchanged/);
+  for (const gain of ['low', 'high']) for (const fromDb of [-12, -10.2, -6, 0, 6]) {
+    for (const toDb of [-12, -10.2, -6, 0, 6]) for (const trimDb of [-2, 0, 2]) {
+      const from = { ...on, gain, preampDb: fromDb };
+      const to = { ...on, gain, preampDb: toDb, trimDb };
+      const a = targetVolume(-40, from, 'dx1'), b = targetVolume(-40, to, 'dx1');
+      const quiet = safePeqSwitchVolume(a, from, b, to);
+      const ceiling = Math.max(effectiveLevel(a, from), effectiveLevel(b, to));
+      assert.ok(quiet <= a && quiet <= b);
+      for (const c of [from, to]) assert.ok(effectiveLevel(quiet, c) <= ceiling + 1e-9);
     }
   }
 });

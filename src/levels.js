@@ -56,3 +56,16 @@ export function validateLevel(volumeDb) {
     throw new Error(`Calculated volume is outside ${MIN_VOLUME_DB}…${MAX_VOLUME_DB} dB. Adjust the reference volume or trim.`);
   }
 }
+
+// Live PEQ leaves gain fixed. Bound every transition by the louder of the two
+// requested endpoints, avoiding an extra 1 dB dip caused only by grid rounding.
+export function safePeqSwitchVolume(fromVolume, from, toVolume, to, step = 'dx1') {
+  validateLevel(fromVolume); validateLevel(toVolume);
+  validateCondition(from); validateCondition(to); validateStep(step);
+  if (from.gain !== to.gain) throw new Error('PEQ switching must leave gain unchanged.');
+  // At this volume, the old profile cannot exceed its starting level and the
+  // new profile cannot exceed its target level. There is no gain-first state.
+  const quiet = quantizeVolume(Math.min(fromVolume, toVolume), step, true);
+  if (quiet < MIN_VOLUME_DB) throw new Error('This transition needs a verified mute operation.');
+  return quiet;
+}

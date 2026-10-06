@@ -58,3 +58,10 @@ A short hardware probe sent the vendor connection (`0x1101=1`) and agreement (`0
 The production controller snapshots route, mute, volume, PEQ logical/runtime state, preset index and temporary preview state. It verifies attenuation before PEQ changes, PEQ/preset before raising volume, and final output/PEQ/preset afterward. It never sends command `0x7500` in hardware mode. Any incoming gain event stops the session, including while idle or reading preflight state; comparing that event against the nominal low-gain calculation value would be incorrect.
 
 With other controllers closed, the final PEQ-only build completed PEQ off in 1328 ms and PEQ on in 1334 ms. The DAC was restored and read back at -20 dB, PEQ on, with gain untouched. Unit tests cover ignored/mismatched acknowledgments, unsafe intermediate conditions, transport errors, disconnects and batch correlation, but do not replace hardware evidence.
+
+
+## Saved-profile comparison — October 5
+
+The controller now retains all three decoded presets and can select indices 0–2 with the existing 0x1206 command. It compensates using the target profile's preamp and checks the expected new index before restoring volume and at completion. Unexpected third-profile activity stops the session. Bypass retains the current preset index. Unequal channel preamps are rejected. These new cross-profile paths have mock-device coverage; physical cross-profile switching is still unverified.
+
+The live transition planner uses the louder nominal endpoint as its ceiling and accounts for both profiles. This avoids an extra rounding-induced volume dip without allowing a transition above either selected endpoint's maximum. Volume attenuation is still explicitly read back before any profile change, and final verification is unchanged. Previously recorded physical timings above describe hardware-8, not the new hardware-9 build.
